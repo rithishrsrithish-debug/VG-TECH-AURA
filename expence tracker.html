@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #6366f1;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      height: fit-content;
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    h1 { margin: 0 0 1.25rem; text-align: center; font-size: 1.6rem; }
+    label { display: block; margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.35rem;
+      border-radius: 0.5rem;
+      border: 1px solid #334155;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      border-radius: 0.5rem;
+      border: none;
+      background: var(--accent);
+      color: var(--text);
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover { filter: brightness(1.1); }
+    .total { margin-top: 1.25rem; text-align: center; font-size: 1.2rem; font-weight: bold; }
+    ul { list-style: none; padding: 0; margin: 1.5rem 0 0; }
+    li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; background: rgba(255,255,255,0.05); padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 0.5rem; }
+    .delete-btn { color: var(--danger); cursor: pointer; border: none; background: none; margin: 0; padding: 0.25rem; width: auto; }
+    .empty { color: var(--muted); justify-content: center; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Expense Tracker</h1>
+    <form id="expenseForm">
+      <label for="desc">Description</label>
+      <input id="desc" type="text" placeholder="e.g. Coffee" required />
+      <label for="amount">Amount</label>
+      <input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required />
+      <button type="submit">Add Expense</button>
+    </form>
+    <div class="total" id="totalDisplay">Total: $0.00</div>
+    <ul id="expenseList"></ul>
+  </main>
+
+  <script>
+    let expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+    const list = document.getElementById('expenseList');
+    const totalDisplay = document.getElementById('totalDisplay');
+
+    function updateUI() {
+      list.innerHTML = '';
+      const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      totalDisplay.textContent = `Total: $${total.toFixed(2)}`;
+      if (!expenses.length) {
+        list.innerHTML = '<li class="empty">No expenses yet.</li>';
+      }
+      expenses.forEach((expense, index) => {
+        const item = document.createElement('li');
+        item.innerHTML = `<span>${escapeHtml(expense.desc)} - $${expense.amount.toFixed(2)}</span><button class="delete-btn" aria-label="Delete expense">✕</button>`;
+        item.querySelector('button').addEventListener('click', () => {
+          expenses.splice(index, 1);
+          saveAndUpdate();
+        });
+        list.appendChild(item);
+      });
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+    }
+
+    function saveAndUpdate() {
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      updateUI();
+    }
+
+    document.getElementById('expenseForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const desc = document.getElementById('desc').value.trim();
+      const amount = Number.parseFloat(document.getElementById('amount').value);
+      if (!desc || !Number.isFinite(amount) || amount <= 0) return;
+      expenses.push({ desc, amount });
+      event.target.reset();
+      saveAndUpdate();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>
